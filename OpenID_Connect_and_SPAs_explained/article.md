@@ -32,10 +32,10 @@ Additionally asking for the `profile` scope will populate the identity token wit
 ## Create an Auth0 client
 In the auth0 dashboard click the `+ CREATE APPLICATION` button.
 Give the application a name and chose Single Page Web Applications
-![Create application](res/auth0_01.png)
+![Create application](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/Auth0_01.png)
 
 Auth0 will take you to a dashboard where you may configure the app and see the Client ID and the Client secret. Under the `Settings` tab add `http://localhost:8080` to the `Allowed Callback URLs` section. This way, by configuring a local server to listen to port 8080, we may catch the response from the authorization server.
-![Add callback URL](res/auth0_02.png)
+![Add callback URL](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/Auth0_02.png)
 
 ## Listen for response from authorization server
 In order to catch the authorization code, we will start a web server that listens to http://localhost:8080 and writes the url in the client request to STDOUT.
