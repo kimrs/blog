@@ -1,0 +1,8 @@
+{
+    "grant_type":"authorization_code",
+    "code":"1853Sxx4h4eNKrsB",
+    "redirect_uri":"http://localhost:8080",
+    "client_id":"BK7iS32Y9QanjdGCLZk499DJ30t7jp0N",
+    "code_verifier":"8i12XE.KUkc4GPnXztOd3jtDNgwDqX20gho59kuKGP~",
+    "audience":"https://soberapi.solstad.dev/"
+}
