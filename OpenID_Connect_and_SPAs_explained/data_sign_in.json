@@ -1,8 +1,6 @@
 {
-    "grant_type":"authorization_code",
-    "code":"K57K8ttRtIvXb4Cl",
-    "redirect_uri":"http://localhost:8080",
-    "client_id":"BK7iS32Y9QanjdGCLZk499DJ30t7jp0N",
-    "code_verifier":"8i12XE.KUkc4GPnXztOd3jtDNgwDqX20gho59kuKGP~",
-    "audience":"https://soberapi.solstad.dev/"
-}
+    "client_id":"VNQEv6jxX5O9zOJ9g2jUoI7css7qpX60",
+    "client_secret":"Q6YwgZB7CFfUf829-ZmcKDRJSYXSpGvWe2qCCn0iGvVIxGpD7ju3Zj78quJJuYiT",
+    "audience":"https://soberapi.solstad.dev/",
+    "grant_type":"client_credentials"
+  }

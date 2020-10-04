@@ -1,25 +1,54 @@
 # About OAuth 2.0 and OpenID connect
-OAuth 2.0 is a popular protocol used for authorization on the internet. Authorization means specifying the priveleges of someone/something accessing a resource. This is not to be confused with authentication, which is verifying the identity of someone accessing a resource. OAuth 2.0 is the protocol at work when you enter a website that lets you login using Google, Facebook, Github etc. When you press the link for login, the website, I.E. the client, sends the user to the authorization server where the user types in its credentials and grants certain priveleges to the website. This allows for safer and simpler handling of user credentials. 
+OAuth 2.0 is a popular protocol used for authorization on the internet. Authorization means specifying the priveleges of someone/something accessing a resource. When an app asks a user for access to a resource she owns, such as her contact list, the app redirects her to a third party `authorization server` where she grants access to it. She, the `resource owner`, has authorized the app, the `client`, to use her contact list. The authorization server mints and returns an `access token`, with the `scope` for her contact list, back to the `client`. Subsequentially, the `client` includes the `access token` in its request for the contact list to the `resource server`.
 
-Some terminology
-* Resource owner: Owner of the resource that the client wants access to. 
-* Client: The application requesting access to a resource.
-* Authorization server: System used for authorizing the client. 
-* Resource server: System holding the resource that the client wants access to. Could be the same as the authorization server. 
-* Scopes: type of privelege that the client is granted.
-* Redirect URI: Where to send the user after authorization has finished. 
-* Access Token: Proof that the client has been authorized
-* Backchannel: A highly secure communication channel between two applications. If a web application uses its backend to communicate with a server, it uses the backchannel.
-* Flow: Procedure for exchanging the access tokem. 
+**_Warning:_** Authorization should not be confused with authentication which is when you verify the identity of someone accessing a resource. 
 
-There are several `flows` that may be used to accuire the `access token`. The most common and secure flow is the authorization code flow. This is when the browser recieves a code from the `authorization server` and the backend sends it back with the client-secret. We say that browser to server communication goes over the frontchannel, whereas server to server communication happens over the backchannel. We can trust the backchannel for exchanging the access token because it is a lot more secure than the frontchannel. 
+OAuth 2.0 was designed for giving permissions, not for sharing user information. That is why they designed OpenID Connect, OIDC, which is a layer on top of OAuth 2.0. It provides a standardized way of getting user information through the OAuth 2.0 protocol. By asking for the `openid` scope when starting a session, you will also receive an identity token in addition to the access token. The identity token is a Json Web Token, and is valid for a set amount of time. Additionally asking for the `profile` scope will populate the identity token with user information.  
+
+For the client to use the authorization server, the client must be registered by it and given a public `client ID` and possibly a private `client secret` only to be known by the client and the authorization server. 
+A grant type, is a method through which the client obtains the `access token`. The client must use it to prove its authenticity. 
+
+**_Note:_** Grant types are often reffered to as flows.
+
+The simplest grant type is `client credentials` and should be used in server to server communication. With this grant type, the client gains the access token by sending the client ID and the client secret to the `token endpoint` on the authorization server. Which endpoints to use in communication with the authorization server can be found with the openid-configuration URL. 
+```
+curl  --request GET                                                     \
+      --url https://sober.eu.auth0.com/.well-known/openid-configuration \
+      | jq
+{      
+  "issuer": "https://sober.eu.auth0.com/",
+  "authorization_endpoint": "https://sober.eu.auth0.com/authorize",
+  "token_endpoint": "https://sober.eu.auth0.com/oauth/token",
+  ...
+}
+
+cat data_sign_in.json
+{
+  "client_id":"VNQEv6jxX5O9zOJ9g2jUoI7css7qpX60",
+  "client_secret":"Q6YwgZB7CFfUf829-ZmcKDRJSYXSpGvWe2qCCn0iGvVIxGpD7ju3Zj78quJJuYiT",
+  "audience":"https://soberapi.solstad.dev/",
+  "grant_type":"client_credentials"
+}
+
+curl --request POST                                 \
+  --url https://sober.eu.auth0.com/oauth/token      \
+  --header 'content-type: application/json'         \
+  --data (cat data_sign_in.json | tr -d " \t\n\r")  \
+  | jq
+{
+  "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ijg1c1ZGNW5Vdl9CS2tiWF9pTUVzTSJ9.eyJpc3MiOiJodHRwczovL3NvYmVyLmV1LmF1dGgwLmNvbS8iLCJzdWIiOiJWTlFFdjZqeFg1Tzl6T0o5ZzJqVW9JN2NzczdxcFg2MEBjbGllbnRzIiwiYXVkIjoiaHR0cHM6Ly9zb2JlcmFwaS5zb2xzdGFkLmRldi8iLCJpYXQiOjE2MDE3OTYyNTUsImV4cCI6MTYwMTg4MjY1NSwiYXpwIjoiVk5RRXY2anhYNU85ek9KOWcyalVvSTdjc3M3cXBYNjAiLCJndHkiOiJjbGllbnQtY3JlZGVudGlhbHMifQ.Ltly-dvF8rKtl2ReYrYrRyG0q4f6tTyetBeCNUCNN80xFWqSlC1jjXNA4ev9ssg5PqU6QGrN1upxa8_oHSbrftTbWu9iPEkt3wITQcKvNxsxqeRvrFAHQx3JiIrFfwbxGl49xYT-4v2NLlhIZ1PvDSmjeKavu2WUHbnnPyEBP_2u3lV9H9RvjhgOuERs1U6WvOpkaw5M0dMtnP7ZEn7fiyFsaXjX4KSG4bZoAf9xRLEhY1VN1wOAEX6FIQUmJDUKIOFFfe2BoaTbpQmKwc_8OgUOgsIK9b3KNHU4_aAhMeuRl3Fpb2Vil64pggpMwCG9EP6lSuGycQ3wWoqZcJ7EQg",
+  "expires_in": 86400,
+  "token_type": "Bearer"
+}
+```
+
+We cannot use the client credentials grant type for webapplications because there is no secure way to store the client secret in the browser. For web applications, the proposition is to use the `authorization code` grant type. This is when the browser recieves a code from the `authorization server` and the backend sends it back with the client-secret. We say that browser to server communication goes over the frontchannel, whereas server to server communication happens over the backchannel. We can trust the backchannel for exchanging the access token because it is a lot more secure than the frontchannel. 
 
 The `access token` flow typically starts with the `resource owner` pressing the "Sign in with Google" button on the `client` webpage. The `client` redirects her to the "/authorize" endpoint on the `authorization server` with a `redirect URI`. The `authorization server` lets the `resource owner` sign in and add `scopes` for the `client`. Subsequentily, the `resource owner` is sent to the `redirect URI` with the authorization code. Using its `backchannel`, the `client` passes the authorization code and the client secret to the authorization server, and receives an access token that can be used to access the resource. 
 
 Alas, Single Page Applications have no backchannel through which it may exchange the authorization code for an access token. Traditionally for this case, the token has been given to the client over the frontchannel thus removing a layer of security. This is called the "implicit flow" and was the standard until the IETF adviced against it in their [2018 paper on best practices](https://tools.ietf.org/html/draft-ietf-oauth-security-topics-09#section-2.1.2). They later proposed [using the Proof Key for Code Exchange, PKCE (pronounced pixie), extension](https://tools.ietf.org/html/draft-ietf-oauth-browser-based-apps-00#section-7) to the OAuth 2.0 authorization code flow. In the authorization code with pkce FLOW, the client must create a code verifier and a code challenge. The code verifier is a random string and the code challenge is the hash value of that random string. The code challenge is included in the authorize request. Then later, in the token exchange request, the code verifier is included. This flow is recommended for cases where there is no safe way to store a secret, and the communication is prone to interception.
 
 ## OpenID Connect
-OAuth 2.0 was designed for giving permissions, not for sharing user information. That is why they designed OpenID Connect, OIDC, which is a layer on top of OAuth 2.0. It provides a standardized way of getting user information through the OAuth 2.0 protocol. By asking for the `openid` scope when starting a session, you will also receive an identity token in addition to the access token. The identity token is a Json Web Token, and is valid for a set amount of time. Additionally asking for the `profile` scope will populate the identity token with user information.  
 
 ![Authorization code flow with PKCE](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/authorization_code_w_pkce.jpg)
 
@@ -151,6 +180,16 @@ cat token.json              \
 
 
 
+# Explaining OAuth involves using a lot of uncommon terms,
+* Resource owner: Owner of the resource that the client wants access to. 
+* Client: The application requesting access to a resource.
+* Authorization server: System used for authorizing the client. 
+* Resource server: System holding the resource that the client wants access to. Could be the same as the authorization server. 
+* Scopes: type of privelege that the client is granted.
+* Redirect URI: Where to send the user after authorization has finished. 
+* Access Token: Proof that the client has been authorized
+* Backchannel: A highly secure communication channel between two applications. If a web application uses its backend to communicate with a server, it uses the backchannel.
+* Flow: Procedure for exchanging the access tokem. 
 
 # Resources
 https://developer.okta.com/blog/2019/05/01/is-the-oauth-implicit-flow-dead
