@@ -138,8 +138,7 @@ Alas, Single Page Applications have no backchannel through which it may exchange
 node server.js
 ```
 
-![Create application](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/Auth0_01.png)
-
+![Create application](res/auth0_spa_01.png)
 
 2. According to [RFC7636](https://tools.ietf.org/html/rfc7636#section-4.1), the "code_verifier" is a cryptographic random string using the characters `[A-Z]/[a-z]/[0-9]/"-"/"."/"_"/"~"` with a minimum length of 43 characters and a maximum length of 128 characters. We need to generate such a string before we can make the code challenge.  
 
