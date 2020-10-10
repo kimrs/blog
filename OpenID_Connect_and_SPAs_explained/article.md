@@ -1,18 +1,23 @@
 # About OAuth 2.0 and OpenID connect
 OAuth 2.0 is a popular protocol used for authorization on the internet. Authorization means specifying the priveleges of someone/something accessing a resource. When an app asks a user for access to a resource she owns, such as her contact list, the app redirects her to a third party `authorization server` where she grants access to it. She, the `resource owner`, has authorized the app, the `client`, to use her contact list. The authorization server mints and returns an `access token`, with the `scope` for her contact list, back to the `client`. Subsequentially, the `client` includes the `access token` in its request for the contact list to the `resource server`.
 
-**_Warning:_** Authorization should not be confused with authentication which is when you verify the identity of someone accessing a resource. 
+**_Warning:_** Authorization should not be confused with authentication which is when you verify the identity of someone. 
 
-OAuth 2.0 was designed for giving permissions, not for sharing user information. That is why they designed OpenID Connect, OIDC, which is a layer on top of OAuth 2.0. It provides a standardized way of getting user information through the OAuth 2.0 protocol. By asking for the `openid` scope when starting a session, you will also receive an identity token in addition to the access token. The identity token is a Json Web Token, and is valid for a set amount of time. Additionally asking for the `profile` scope will populate the identity token with user information.  
+OAuth 2.0 was designed for giving permissions, not for authentication. That is why they designed OpenID Connect, OIDC, which is a small layer on top of OAuth 2.0. It provides a standardized way of getting user information through the OAuth 2.0 protocol. By asking for the `openid` scope when starting a session, you will receive an identity token in addition to the access token. The identity token is a Json Web Token, JWT, and valid for a set amount of time. Additionally asking for the `profile` scope will populate the identity token with user information.  
 
 For the client to use the authorization server, the client must be registered by it and given a public `client ID` and possibly a private `client secret` only to be known by the client and the authorization server. 
-A grant type, is a method through which the client obtains the `access token`. The client must use it to prove its authenticity. 
+
+## Client Credentials
+A grant type, is a method through which the client obtains the `access token`. The client use it to prove its authenticity. The simplest grant type is `client credentials` and should be used in server to server communication I.E through the backchannel. With this grant type, the client gains the access token by sending the client ID and the client secret to the `token endpoint` on the authorization server. Which endpoints to use in communication with the authorization server can be found with the openid-configuration URL. In the following example, we retrieve the access token from the authorization server using the client credentials grant. 
 
 **_Note:_** Grant types are often reffered to as flows.
 
-The simplest grant type is `client credentials` and should be used in server to server communication. With this grant type, the client gains the access token by sending the client ID and the client secret to the `token endpoint` on the authorization server. Which endpoints to use in communication with the authorization server can be found with the openid-configuration URL. 
-```
-curl  --request GET                                                     \
+The first step in implementing any grant types is registering the application on the authorization server. The server we will use for the entirety of this article, is [Auth0.com](https://auth0.com/). For the client credential flow to be used, select "Machine to Machine Applications"
+![Client Credentials](res/Auth0_client_credentials_01.png)
+The endpoints that 
+
+```bash
+curl  --request GET \
       --url https://sober.eu.auth0.com/.well-known/openid-configuration \
       | jq
 {      
@@ -42,28 +47,13 @@ curl --request POST                                 \
 }
 ```
 
-We cannot use the client credentials grant type for webapplications because there is no secure way to store the client secret in the browser. For web applications, the proposition is to use the `authorization code` grant type. This is when the browser recieves a code from the `authorization server` and the backend sends it back with the client-secret. We say that browser to server communication goes over the frontchannel, whereas server to server communication happens over the backchannel. We can trust the backchannel for exchanging the access token because it is a lot more secure than the frontchannel. 
+We cannot use the client credentials grant type for webapplications because there is no secure way to store the client secret in the browser. For web applications, the proposition is to use the `authorization code` grant type. This is when the frontend recieves a code from the `authorization server` and the backend sends it back with the client-secret. I.E an authorization code is received through the front channel and sent through the backchannel. We trust the backchannel, but not the frontchannel, for exchanging the access token because it is a lot more secure. 
 
-The `access token` flow typically starts with the `resource owner` pressing the "Sign in with Google" button on the `client` webpage. The `client` redirects her to the "/authorize" endpoint on the `authorization server` with a `redirect URI`. The `authorization server` lets the `resource owner` sign in and add `scopes` for the `client`. Subsequentily, the `resource owner` is sent to the `redirect URI` with the authorization code. Using its `backchannel`, the `client` passes the authorization code and the client secret to the authorization server, and receives an access token that can be used to access the resource. 
+The `authorization code` grant type typically starts with the `resource owner` pressing the "Sign in with Google" button on the `client` webpage. The `client` redirects her to the "/authorize" endpoint on the `authorization server` with a `redirect URI`. The `authorization server` lets the `resource owner` sign in and add `scopes` for the `client`. Subsequently, the `resource owner` is sent to the `redirect URI` with the authorization code. Using its `backchannel`, the `client` passes the authorization code and the client secret to the authorization server, and receives an access token that can be used to access the resource. 
+The authorization code is useless to someone who do not know the client secret and intruders who unjustly got the code, is not likely to obtain the access token. 
 
-Alas, Single Page Applications have no backchannel through which it may exchange the authorization code for an access token. Traditionally for this case, the token has been given to the client over the frontchannel thus removing a layer of security. This is called the "implicit flow" and was the standard until the IETF adviced against it in their [2018 paper on best practices](https://tools.ietf.org/html/draft-ietf-oauth-security-topics-09#section-2.1.2). They later proposed [using the Proof Key for Code Exchange, PKCE (pronounced pixie), extension](https://tools.ietf.org/html/draft-ietf-oauth-browser-based-apps-00#section-7) to the OAuth 2.0 authorization code flow. In the authorization code with pkce FLOW, the client must create a code verifier and a code challenge. The code verifier is a random string and the code challenge is the hash value of that random string. The code challenge is included in the authorize request. Then later, in the token exchange request, the code verifier is included. This flow is recommended for cases where there is no safe way to store a secret, and the communication is prone to interception.
-
-## OpenID Connect
-
-![Authorization code flow with PKCE](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/authorization_code_w_pkce.jpg)
-
-# A practical example
-## Create an Auth0 client
-In the auth0 dashboard click the `+ CREATE APPLICATION` button.
-Give the application a name and chose Single Page Web Applications
-
-![Create application](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/Auth0_01.png)
-
-Auth0 will take you to a dashboard where you may configure the app and see the Client ID and the Client secret. Under the `Settings` tab add `http://localhost:8080` to the `Allowed Callback URLs` section. This way, by configuring a local server to listen to port 8080, we may catch the response from the authorization server.
-
-![Add callback URL](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/Auth0_02.png)
-
-## Listen for response from authorization server
+[explanatory sketch]
+1. Listen for response from authorization server
 In order to catch the authorization code, we will start a web server that listens to http://localhost:8080 and writes the url in the client request to STDOUT.
 
 ```javascript
@@ -85,6 +75,65 @@ http.createServer(function (req, res) {
 ```bash
 node server.js
 ```
+
+2. Obtain the authorization code by signing in
+Next, we construct a sign in URL using the `authorize` endpoint. By following the link, the user will be redirected to a sign in page followed by a page explaining the permissions she is about give. 
+In our case, we will need the profile information, which requires two scopes: openid and profile. The openid scope utilizes the OIDC implementation on the authorization server to return an id_token along with the access_token. The profile scope populates the id token with user information. Required parameters for the authorize url are
+* client_id: Found in the settings page for this client on auth0.com. 
+* redirect_uri: Where to direct the user once authorization is finished.
+* scope: Space delimited list of strings that defines the priveleges requested by the client. 
+* response_type: Can be set to token or code. Code is safer.
+* response_mode: How the response data should be presented. 
+
+```
+open https://sober.eu.auth0.com/authorize?client_id=BK7iS32Y9QanjdGCLZk499DJ30t7jp0N&redirect_uri=http%3A%2F%2Flocalhost%3A8080&scope=openid%20profile&response_type=code&response_mode=form_post
+```
+3. Exchange the authorization code for the access token
+
+The server we previously started prints out the authorization code. The output should be something like this: 
+```bash
+code=DRnYrDZDBEHdGrhj&state=g6Fo2SA2R09xNnlEeG1VRlFsaXBMRndMblZ2U1NxbmYzOWxvZKN0aWTZIGM0OFlFRGVad24tYXpfNmNLVkFyZ1dZTmwzZ2lHSVdNo2NpZNkgQks3aVMzMlk5UWFuamRHQ0xaazQ5OURKMzB0N2pwME4
+```
+The code part is the authorization code. Exchange this and the client secret for the access token using the token endpoint. For this grant type to be secure, this should happen through the backchannel.
+
+```bash
+cat data_sign_in.json
+{
+    "grant_type":"authorization_code",
+    "redirect_uri":"http://localhost:8080",
+    "client_id":"BK7iS32Y9QanjdGCLZk499DJ30t7jp0N",
+    "audience":"https://soberapi.solstad.dev/",
+    "code":"DRnYrDZDBEHdGrhj"
+}
+curl --request POST \
+        --url https://sober.eu.auth0.com/oauth/token \
+        --header 'content-type: application/json' \
+        --data (cat data_sign_in.json | tr -d " \t\n\r") \
+        | tee token.json \
+        | jq
+{
+  "access_token": "2FsL8cgBcPicvQAcicReKRpwCgZJCT-7",
+  "id_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ijg1c1ZGNW5Vdl9CS2tiWF9pTUVzTSJ9.eyJnaXZlbl9uYW1lIjoiS2ltIFJ1bmUiLCJmYW1pbHlfbmFtZSI6IlNvbHN0YWQiLCJuaWNrbmFtZSI6ImtpbXJ1bmVzb2xzdGFkODkiLCJuYW1lIjoiS2ltIFJ1bmUgU29sc3RhZCIsInBpY3R1cmUiOiJodHRwczovL2xoNC5nb29nbGV1c2VyY29udGVudC5jb20vLVRZeVduLTRQX3RrL0FBQUFBQUFBQUFJL0FBQUFBQUFBQUFBL0FNWnV1Y21DU05zeE9nVGRaa05PR1BjLWQ5aG56RGNfV3cvcGhvdG8uanBnIiwibG9jYWxlIjoibm8iLCJ1cGRhdGVkX2F0IjoiMjAyMC0xMC0wNFQxMjo1ODoxOC41ODBaIiwiaXNzIjoiaHR0cHM6Ly9zb2Jlci5ldS5hdXRoMC5jb20vIiwic3ViIjoiZ29vZ2xlLW9hdXRoMnwxMTA0MzEyMTE3NzQ4MjgzMTA3MTIiLCJhdWQiOiJCSzdpUzMyWTlRYW5qZEdDTFprNDk5REozMHQ3anAwTiIsImlhdCI6MTYwMTgxNjM0OSwiZXhwIjoxNjAxODUyMzQ5fQ.YtxM30YQWgbcKzH0cphm3fXbk2j7JdN8RTTO4Q9PaL_7GUKneP4ay3WMjnLJEN3iniwWR3HM-4g3IGuYoEM175qPsPFvRZ9Er8nl_7nEQ6agzrHGGa77jyH8Sj_PuyQGSx4UF-PgN8lkub6BRldXEx5cmpgRHxfvCDVKipulangpiteVi1RnzrcXEkciuPMxaAg44cw0UKbnfhGLvDB2GZOf6JGdqXL9tH-VxKc3vYWfivQzITs4ciCnY8QhHXcqYGeFu2xevf2YORc4qSkBeR3D1-gTk4NUnizSAV9Vl4IyYaY_xQUHFzI2HmD6zqDfnsJMHStAyUaiZWowlpU3sQ",
+  "scope": "openid profile",
+  "expires_in": 86400,
+  "token_type": "Bearer"
+}
+```
+
+Alas, Single Page Applications have no backchannel through which it may exchange the authorization code for an access token. Traditionally for this case, the token has been given to the client over the frontchannel thus removing a layer of security. This is called the "implicit flow" and was the standard until the IETF adviced against it in their [2018 paper on best practices](https://tools.ietf.org/html/draft-ietf-oauth-security-topics-09#section-2.1.2). They later proposed using the [Proof Key for Code Exchange](https://tools.ietf.org/html/draft-ietf-oauth-browser-based-apps-00#section-7), PKCE (pronounced pixie), extension to the OAuth 2.0 authorization code flow. In the authorization code with pkce FLOW, the client must create a code verifier and a code challenge. The code verifier is a random string and the code challenge is the hash value of that random string. The code challenge is included in the authorize request. Then later, in the token exchange request, the code verifier is included. This flow is recommended for cases where there is no safe way to store a secret, and the communication is prone to interception.
+
+![Authorization code flow with PKCE](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/authorization_code_w_pkce.jpg)
+
+## Create an Auth0 client
+In the auth0 dashboard click the `+ CREATE APPLICATION` button.
+Give the application a name and chose Single Page Web Applications
+
+![Create application](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/Auth0_01.png)
+
+Auth0 will take you to a dashboard where you may configure the app and see the Client ID and the Client secret. Under the `Settings` tab add `http://localhost:8080` to the `Allowed Callback URLs` section. This way, by configuring a local server to listen to port 8080, we may catch the response from the authorization server.
+
+![Add callback URL](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/Auth0_02.png)
+
 ## Sign in
 According to [RFC7636](https://tools.ietf.org/html/rfc7636#section-4.1), the "code_verifier" is a cryptographic random string using the characters `[A-Z]/[a-z]/[0-9]/"-"/"."/"_"/"~"` with a minimum length of 43 characters and a maximum length of 128 characters. 
 
@@ -120,6 +169,7 @@ open https://sober.eu.auth0.com/authorize?client_id=BK7iS32Y9QanjdGCLZk499DJ30t7
 ```
 
 After sign in, the authorization server associates the `code_challenge` with the authorization code so that it can be verified later. The code is sent to the 'redirect_uri` where our node server listens and prints:
+
 
 ```bash
 code=1853Sxx4h4eNKrsB&state=g6Fo2SBuZHNKcVBEMUlPQ3lHWEZiUGpSSHhIWURXc21QTkppeqN0aWTZIF9FWkpFaHprQUdPYml1ZDZ2OXNSM1Bqcm96RTMyLWlXo2NpZNkgQks3aVMzMlk5UWFuamRHQ0xaazQ5OURKMzB0N2pwME4
