@@ -1,3 +1,4 @@
+![Authorized personnel onlu](res/authorized_pers.jpg)
 # About OAuth 2.0 and OpenID connect
 OAuth 2.0 is a popular protocol used for authorization on the internet. Authorization means specifying the priveleges of someone/something accessing a resource. When an app asks a user for access to a resource she owns, such as her contact list, the app redirects her to a third party `authorization server` where she grants access to it. She, the `resource owner`, has authorized the app, the `client`, to use her contact list. The authorization server mints and returns an `access token`, with the `scope` for her contact list, back to the `client`. Subsequentially, the `client` includes the `access token` in its request for the contact list to the `resource server`.
 
@@ -8,15 +9,9 @@ OAuth 2.0 was designed for giving permissions, not for authentication. That is w
 For the client to use the authorization server, the client must be registered by it and given a public `client ID` and possibly a private `client secret` only to be known by the client and the authorization server. 
 
 ## Client Credentials
-A grant type, is a method through which the client obtains the `access token`. The client use it to prove its authenticity. The simplest grant type is `client credentials` and should be used in server to server communication I.E through the backchannel. With this grant type, the client gains the access token by sending the client ID and the client secret to the `token endpoint` on the authorization server. Which endpoints to use in communication with the authorization server can be found with the openid-configuration URL. In the following example, we retrieve the access token from the authorization server using the client credentials grant. 
+A grant type, is a method through which the client obtains the `access token`. The client use it to prove its authenticity. The simplest grant type is `client credentials` and should be used in server to server communication I.E through the backchannel. With this grant type, the client gains the access token by sending the client ID and the client secret to the `token endpoint` on the authorization server. Which endpoints to use in communication with the authorization server can be found with the openid-configuration URL. 
 
 **_Note:_** Grant types are often reffered to as flows.
-
-The first step in implementing any grant types is registering the application on the authorization server. The server we will use for the entirety of this article is [Auth0.com](https://auth0.com/). For the client credential flow to be used, select "Machine to Machine Applications"
-
-![Client Credentials](res/Auth0_client_credentials_01.png)
-
-The endpoints to use is exposed through the configuration URL for the authorization server. We will, for this case, use the token endpoint. 
 
 ```bash
 curl  --request GET \
@@ -28,6 +23,13 @@ curl  --request GET \
   "token_endpoint": "https://sober.eu.auth0.com/oauth/token",
   ...
 }
+```
+In the following example, we retrieve the access token from the authorization server using the client credentials grant. The first step in implementing any grant types is registering the application on the authorization server. The server we will use for the entirety of this article is [Auth0.com](https://auth0.com/). For the client credential flow to be used, we select "Machine to Machine Applications"
+
+![Client Credentials](res/Auth0_client_credentials_01.png)
+
+
+```Bash
 
 cat data_sign_in.json
 {
@@ -48,13 +50,15 @@ curl --request POST                                 \
   "token_type": "Bearer"
 }
 ```
-## Authorization Code Grant Type
-We cannot use the client credentials grant type for webapplications because there is no secure way to store the client secret in the browser. For web applications, the proposition is to use the `authorization code` grant type. This is when the frontend recieves a code from the `authorization server` and the backend sends it back with the client-secret. I.E an authorization code is received through the front channel and sent through the backchannel. We trust the backchannel, but not the frontchannel, for exchanging the access token because it is safer.
+The access token may be used to make authorized requests to the resource server. For example to accuire someones Facebook contacts. As mentioned, the Client Credentials grant type is only to be used in server to server communication. For other cases, there are other grant types. 
 
-The `authorization code` grant type typically starts with the `resource owner` pressing the "Sign in with Google" button on the `client` webpage. The `client` redirects her to the "/authorize" endpoint on the `authorization server` with a `redirect URI`. The `authorization server` lets the `resource owner` sign in and add `scopes` for the `client`. Subsequently, the `resource owner` is sent to the `redirect URI` with the authorization code. Using its `backchannel`, the `client` passes the authorization code and the client secret to the authorization server, and receives an access token that can be used to access the resource. 
+## Authorization Code Grant Type
+We cannot use the client credentials grant type for webapplications because there is no secure way to store the client secret in the browser. For web applications, the proposition is to use the "Authorization Code" grant type. This is when the frontend recieves a code from the authorization server and the backend sends it back with the client-secret. I.E an authorization code is received through the front channel and sent through the backchannel. We trust the backchannel, but not the frontchannel, for exchanging the access token because communication over the backchannel is hidden.
+
+The Authorization Code grant type typically starts with the resource owner pressing the "Sign in with Google" button on the client webpage. The client redirects her to the "/authorize" endpoint on the authorization server with a redirect URI. The authorization server lets the resource owner sign in and add scopes for the client. Subsequently, the resource owner is sent to the redirect URI with the authorization code. Using its backchannel, the client passes the authorization code and the client secret to the authorization server, and receives an access token that can be used to access the resource. 
 The authorization code is useless to anyone who does not know the client secret. Intruders who unjustly gained the code is not likely to obtain the access token. 
 
-[explanatory sketch]
+![Authorization code flow with PKCE](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/authorization_code_w_pkce.jpg)
 
 1. For the authorization code grant type to be used, "Regular Web Applications" must be selected when registering the app. 
 ![Authorization Code](res/Auth0_authorization_code_01.png)
@@ -127,7 +131,6 @@ curl --request POST \
 ## Authorization Code With PKCE
 Alas, Single Page Applications have no backchannel through which it may exchange the authorization code for an access token. Traditionally for this case, the Iplicit Flow was used. This grant type is similar to Authorization Code, but without the last step involving the client secret. The token was given to the client over the frontchannel thus removing a layer of security. This was the standard until the IETF adviced against it in their [2018 paper on best practices](https://tools.ietf.org/html/draft-ietf-oauth-security-topics-09#section-2.1.2). They later proposed using the [Proof Key for Code Exchange](https://tools.ietf.org/html/draft-ietf-oauth-browser-based-apps-00#section-7), PKCE (pronounced pixie), extension to the OAuth 2.0 authorization code flow. In the authorization code with PKCE flow, the client must create a code verifier and a code challenge. The code verifier is a random string and the code challenge is the hash value of that random string. The code challenge is included in the authorize request. Then later, in the token exchange request, the code verifier is included. This flow is recommended for cases where there is no safe way to store a secret, and where the communication is prone to interception.
 
-![Authorization code flow with PKCE](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/authorization_code_w_pkce.jpg)
 
 1. In this last example, we will register the application as Single Page Application. Like the last time, set the 'Allowed Callbacks' to http://localhost:8080 and make sure the server we created in the previous step is started. 
 
