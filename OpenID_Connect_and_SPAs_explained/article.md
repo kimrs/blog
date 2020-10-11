@@ -1,15 +1,15 @@
 ![Authorized personnel onlu](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/authorized_pers.jpg)
 # About OAuth 2.0 and OpenID connect
-OAuth 2.0 is a popular protocol used for authorization on the internet. Authorization means specifying the priveleges of someone/something accessing a resource. When an app asks a user for access to a resource she owns, such as her contact list, the app redirects her to a third party `authorization server` where she grants access to it. She, the `resource owner`, has authorized the app, the `client`, to use her contact list. The authorization server mints and returns an `access token`, with the `scope` for her contact list, back to the `client`. Subsequentially, the `client` includes the `access token` in its request for the contact list to the `resource server`.
+OAuth 2.0 is a popular protocol used for authorization on the internet. Authorization means specifying the priveleges of someone/something accessing a resource. When an app asks a user for access to a resource she owns, such as her contact list, the app redirects her to a third party authorization server where she grants access to it. She, the resource owner, has authorized the app, the client, to use her contact list. The authorization server mints and returns an access token, with the scope for her contact list, back to the client. Subsequently, the client includes the access token in its request for the contact list to the resource server.
 
 **_Warning:_** Authorization should not be confused with authentication which is when you verify the identity of someone. 
 
-OAuth 2.0 was designed for giving permissions, not for authentication. That is why they designed OpenID Connect, OIDC, which is a small layer on top of OAuth 2.0. It provides a standardized way of getting user information through the OAuth 2.0 protocol. By asking for the `openid` scope when starting a session, you will receive an identity token in addition to the access token. The identity token is a Json Web Token, JWT, and valid for a set amount of time. Additionally asking for the `profile` scope will populate the identity token with user information.  
+OAuth 2.0 was designed for giving permissions, not for authentication. That is why they designed OpenID Connect, OIDC, which is a small layer on top of OAuth 2.0. It provides a standardized way of getting user information through the OAuth 2.0 protocol. By asking for the *openid* scope when starting a session, you will receive an identity token in addition to the access token. The identity token is a Json Web Token, JWT, and valid for a set amount of time. Additionally asking for the *profile* scope will populate the identity token with user information.  
 
-For the client to use the authorization server, the client must be registered by it and given a public `client ID` and possibly a private `client secret` only to be known by the client and the authorization server. 
+For the client to use the authorization server, the client must be registered by it and given a public *client ID* and possibly a private *client secret* only to be known by the client and the authorization server. 
 
 ## Client Credentials
-A grant type, is a method through which the client obtains the `access token`. The client use it to prove its authenticity. The simplest grant type is `client credentials` and should be used in server to server communication I.E through the backchannel. With this grant type, the client gains the access token by sending the client ID and the client secret to the `token endpoint` on the authorization server. Which endpoints to use in communication with the authorization server can be found with the openid-configuration URL. 
+A grant type, is a method through which the client obtains the *access token*. The client use it to prove its authenticity. The simplest grant type is *client credentials* and should only be used in server to server communication I.E through the backchannel. With this grant type, the client gains an access token by sending the client ID and the client secret to the *token endpoint* on the authorization server. Which endpoints to use in communication with the authorization server can be found with the *openid-configuration* URL. This information is usually available on the authorization server's dashboard, but this URL is the [IETF](https://tools.ietf.org/html/rfc8414) standard to obtain information for interaction. 
 
 **_Note:_** Grant types are often reffered to as flows.
 
@@ -24,13 +24,13 @@ curl  --request GET \
   ...
 }
 ```
-In the following example, we retrieve the access token from the authorization server using the client credentials grant. The first step in implementing any grant types is registering the application on the authorization server. The server we will use for the entirety of this article is [Auth0.com](https://auth0.com/). For the client credential flow to be used, we select "Machine to Machine Applications"
+In the following example, we retrieve the access token from the authorization server using the client credentials grant. For the entierity of this post, we will use [Auth0.com](https://auth0.com/) as authorization server. The first step in implementing any grant types is registering the application on the authorization server.  For the client credential flow to be used, we select "Machine to Machine Applications"
 
 ![Client Credentials](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/Auth0_client_credentials_01.png)
 
+Then we simply ask for the token by sending the *client id* and the *client secret* to the token endpoint. 
 
 ```Bash
-
 cat data_sign_in.json
 {
   "client_id":"VNQEv6jxX5O9zOJ9g2jUoI7css7qpX60",
@@ -50,22 +50,23 @@ curl --request POST                                 \
   "token_type": "Bearer"
 }
 ```
-The access token may be used to make authorized requests to the resource server. For example to accuire someones Facebook contacts. As mentioned, the Client Credentials grant type is only to be used in server to server communication. For other cases, there are other grant types. 
+The access token may be used to make authorized requests to the resource server. As mentioned, the Client Credentials grant type is only to be used in server to server communication. For other cases, there are other grant types. 
 
 ## Authorization Code Grant Type
 We cannot use the client credentials grant type for webapplications because there is no secure way to store the client secret in the browser. For web applications, the proposition is to use the "Authorization Code" grant type. This is when the frontend recieves a code from the authorization server and the backend sends it back with the client-secret. I.E an authorization code is received through the front channel and sent through the backchannel. We trust the backchannel, but not the frontchannel, for exchanging the access token because communication over the backchannel is hidden.
 
-The Authorization Code grant type typically starts with the resource owner pressing the "Sign in with Google" button on the client webpage. The client redirects her to the "/authorize" endpoint on the authorization server with a redirect URI. The authorization server lets the resource owner sign in and add scopes for the client. Subsequently, the resource owner is sent to the redirect URI with the authorization code. Using its backchannel, the client passes the authorization code and the client secret to the authorization server, and receives an access token that can be used to access the resource. 
-The authorization code is useless to anyone who does not know the client secret. Intruders who unjustly gained the code is not likely to obtain the access token. 
+The Authorization Code grant type typically starts with the resource owner pressing the "Sign in with Google" button on the client webpage. The client redirects her to the *authorize* endpoint on the authorization server with a redirect URI. The authorization server lets the resource owner sign in and add scopes for the client. Subsequently, the resource owner is sent to the redirect URI with the authorization code. Using its backchannel, the client passes the authorization code and the client secret to the authorization server, and receives an access token that can be used to access the resource. 
 
-![Authorization code flow with PKCE](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/authorization_code_w_pkce.jpg)
+**_Note_:** The authorization code is useless to anyone who does not know the client secret. Intruders who unjustly gained the code is not likely to obtain the access token. 
 
-1. For the authorization code grant type to be used, "Regular Web Applications" must be selected when registering the app. 
+![Authorization code grant type](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/authorization_code.jpg)
+
+For the authorization code grant type to be used, "Regular Web Applications" must be selected when registering the app. 
 ![Authorization Code](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/Auth0_authorization_code_01.png)
-2. We set the allowed callback to be http://localhost:8080. This is where we will receive the code and the token from the authorization server.
+We set the allowed callback to be http://localhost:8080. This is where we will receive the code and the token from the authorization server.
 ![Authorization Code](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/Auth0_authorization_code_02.png)
 
-3. In order to catch the authorization code, we will start a web server that listens to http://localhost:8080 and writes the post data in the request to STDOUT.
+In order to catch the authorization code, we will start a web server that listens to http://localhost:8080 and prints out the post data.
 
 ```javascript
 // server.js
@@ -87,8 +88,7 @@ http.createServer(function (req, res) {
 node server.js
 ```
 
-2. Next, we construct a sign in URL using the `authorize` endpoint. By following the link, the user will be redirected to a sign in page followed by a page explaining the permissions she is about give. 
-In our case, we will need the profile information, which requires two scopes: openid and profile. The openid scope utilizes the OIDC implementation on the authorization server to return an id_token along with the access_token. The profile scope populates the id token with user information. Required parameters for the authorize url are
+Next, we construct a sign in URL using the *authorize* endpoint. By following the link, the user will be redirected to a sign in page followed by a page explaining the permissions she is about give. In our case, we will need the profile information, which requires two scopes: openid and profile. The openid scope utilizes the OIDC implementation on the authorization server to return an *id token* along with the *access token*. The profile scope populates the *id token* with user information. Required parameters for the authorize url are
 * client_id: Found in the settings page for this client on auth0.com. 
 * redirect_uri: Where to direct the user once authorization is finished.
 * scope: Space delimited list of strings that defines the priveleges requested by the client. 
@@ -98,13 +98,11 @@ In our case, we will need the profile information, which requires two scopes: op
 ```
 open https://sober.eu.auth0.com/authorize?client_id=BK7iS32Y9QanjdGCLZk499DJ30t7jp0N&redirect_uri=http%3A%2F%2Flocalhost%3A8080&scope=openid%20profile&response_type=code&response_mode=form_post
 ```
-3. Exchange the authorization code for the access token
-
-The server we previously started prints out the authorization code. The output should be something like this: 
+Lastly, we exchange the authorization code for the access token. The server we previously started prints out the authorization code. The output should be something like:
 ```bash
 code=DRnYrDZDBEHdGrhj&state=g6Fo2SA2R09xNnlEeG1VRlFsaXBMRndMblZ2U1NxbmYzOWxvZKN0aWTZIGM0OFlFRGVad24tYXpfNmNLVkFyZ1dZTmwzZ2lHSVdNo2NpZNkgQks3aVMzMlk5UWFuamRHQ0xaazQ5OURKMzB0N2pwME4
 ```
-The code part is the authorization code. Exchange this and the client secret for the access token using the token endpoint. For this grant type to be secure, this should happen through the backchannel.
+The code part is the authorization code. Exchange this and the client secret for the access token using the token endpoint. For this grant type to be secure, this should happen from the backend.
 
 ```bash
 cat data_sign_in.json
@@ -131,8 +129,10 @@ curl --request POST \
 ## Authorization Code With PKCE
 Alas, Single Page Applications have no backchannel through which it may exchange the authorization code for an access token. Traditionally for this case, the Iplicit Flow was used. This grant type is similar to Authorization Code, but without the last step involving the client secret. The token was given to the client over the frontchannel thus removing a layer of security. This was the standard until the IETF adviced against it in their [2018 paper on best practices](https://tools.ietf.org/html/draft-ietf-oauth-security-topics-09#section-2.1.2). They later proposed using the [Proof Key for Code Exchange](https://tools.ietf.org/html/draft-ietf-oauth-browser-based-apps-00#section-7), PKCE (pronounced pixie), extension to the OAuth 2.0 authorization code flow. In the authorization code with PKCE flow, the client must create a code verifier and a code challenge. The code verifier is a random string and the code challenge is the hash value of that random string. The code challenge is included in the authorize request. Then later, in the token exchange request, the code verifier is included. This flow is recommended for cases where there is no safe way to store a secret, and where the communication is prone to interception.
 
+![Authorization code flow with PKCE](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/authorization_code_w_pkce.jpg)
 
-1. In this last example, we will register the application as Single Page Application. Like the last time, set the 'Allowed Callbacks' to http://localhost:8080 and make sure the server we created in the previous step is started. 
+
+In this last example, we will register the application as Single Page Application. Like the last time, set the 'Allowed Callbacks' to http://localhost:8080 and make sure the server we created in the previous step is started. 
 
 ```Bash
 node server.js
