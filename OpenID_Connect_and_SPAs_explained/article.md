@@ -9,7 +9,7 @@ OAuth 2.0 was designed for giving permissions, not for authentication. That is w
 For the client to use the authorization server, the client must be registered by it and given a public *client ID* and possibly a private *client secret* only to be known by the client and the authorization server. 
 
 ## Client Credentials
-A grant type, is a method through which the client obtains the *access token*. The client use it to prove its authenticity. The simplest grant type is *client credentials* and should only be used in server to server communication I.E through the backchannel. With this grant type, the client gains an access token by sending the client ID and the client secret to the *token endpoint* on the authorization server. Which endpoints to use in communication with the authorization server can be found with the *openid-configuration* URL. This information is usually available on the authorization server's dashboard, but this URL is the [IETF](https://tools.ietf.org/html/rfc8414) standard to obtain information for interaction. 
+A grant type, is a method through which the client obtains the *access token*. The client use it to prove its authenticity. The simplest grant type is *client credentials* and should only be used in server to server communication. With this grant type, the client gains an access token by sending the client ID and the client secret to the *token endpoint* on the authorization server. Which endpoints to use in communication with the authorization server can be found with the *openid-configuration* URL. This information is usually available on the authorization server's dashboard, but this URL is the [IETF](https://tools.ietf.org/html/rfc8414) standard to obtain information about interaction with authorization servers. 
 
 **_Note:_** Grant types are often reffered to as flows.
 
@@ -132,7 +132,7 @@ Alas, Single Page Applications have no backchannel through which it may exchange
 ![Authorization code flow with PKCE](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/authorization_code_w_pkce.jpg)
 
 
-In this last example, we will register the application as Single Page Application. Like the last time, set the 'Allowed Callbacks' to http://localhost:8080 and make sure the server we created in the previous step is started. 
+In this last example, we will register the application as Single Page Application. Like the last time, set the 'Allowed Callbacks' to http://localhost:8080 and make sure the server we created in the previous example is started. 
 
 ```Bash
 node server.js
@@ -140,40 +140,41 @@ node server.js
 
 ![Create application](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/Auth0_spa_01.png)
 
-2. According to [RFC7636](https://tools.ietf.org/html/rfc7636#section-4.1), the "code_verifier" is a cryptographic random string using the characters `[A-Z]/[a-z]/[0-9]/"-"/"."/"_"/"~"` with a minimum length of 43 characters and a maximum length of 128 characters. We need to generate such a string before we can make the code challenge.  
+According to [RFC7636](https://tools.ietf.org/html/rfc7636#section-4.1), the "code_verifier" is a cryptographic random string using the characters `[A-Z]/[a-z]/[0-9]/"-"/"."/"_"/"~"` with a minimum length of 43 characters and a maximum length of 128 characters. We need to generate such a string before we can make the code challenge.  
 
 ```bash
-cat /dev/urandom          \
-| tr -cd '[:alnum:]_.~-'  \
-| fold -w 43              \
+cat /dev/urandom                      \
+| LC_CTYPE=C tr -cd '[:alnum:]_.~-'   \
+| fold -w 43                          \
 | head -n 1
-8i12XE.KUkc4GPnXztOd3jtDNgwDqX20gho59kuKGP~
+FLy2h8AP4IXo5~Od~Aeei7yJvcmwxjTs_Kv5O-e-1ah
 ```
-3. The code challenge is derived from the code verifier. It can be plain, I.E the equal to the code verifier, but using the hash value is recommended.
+
+The code challenge is derived from the code verifier. It can be plain, I.E equal to the code verifier, but using the hash value is recommended. The hash must be encoded as a base64url.
+
 ```bash
-echo 8i12XE.KUkc4GPnXztOd3jtDNgwDqX20gho59kuKGP \
+echo FLy2h8AP4IXo5~Od~Aeei7yJvcmwxjTs_Kv5O-e-1ah \
 | shasum -a 256   \
 | cut -d " " -f 1 \
 | xxd -r -p       \
-| base64 \
+| base64          \
 | tr / _ | tr + = | tr -d =
 
-W3Z3xkPNrhH9sPXraFiomFvY-FLtFI7fFeIl6fcZkME
+78ZgrApYA9Fsl9hBEZuuRK0aUUKKzUVF6v3dM7I5SPY
 ```
 We include the code challenge in the sign in URL. Also, we have to tell the authorization server what method used for the code chalenge. Because we used a hash, this must be set to S256.
 
 ```
-open https://sober.eu.auth0.com/authorize?client_id=BK7iS32Y9QanjdGCLZk499DJ30t7jp0N&redirect_uri=http%3A%2F%2Flocalhost%3A8080&scope=openid%20profile&code_challenge=W3Z3xkPNrhH9sPXraFiomFvY-FLtFI7fFeIl6fcZkME&code_challenge_method=S256&response_type=code&response_mode=form_post&nonce=2vcjjlduyzc
+open https://sober.eu.auth0.com/authorize?client_id=3YfTh7XFUa7vtNuxUkSwa5HziyquYTI3&redirect_uri=http%3A%2F%2Flocalhost%3A8080&scope=openid%20profile&code_challenge=78ZgrApYA9Fsl9hBEZuuRK0aUUKKzUVF6v3dM7I5SPY&code_challenge_method=S256&response_type=code&response_mode=form_post&nonce=2vcjjlduyzc
 ```
 
-After sign in, the authorization server associates the `code_challenge` with the authorization code so that it can be verified later. The code is sent to the 'redirect_uri` where our node server listens and prints:
+After sign in, the authorization server associates the code_challenge with the authorization code so that it can be verified later. The code is sent to the 'redirect_uri` where our node server listens and prints:
 
 
 ```bash
 code=1853Sxx4h4eNKrsB&state=g6Fo2SBuZHNKcVBEMUlPQ3lHWEZiUGpSSHhIWURXc21QTkppeqN0aWTZIF9FWkpFaHprQUdPYml1ZDZ2OXNSM1Bqcm96RTMyLWlXo2NpZNkgQks3aVMzMlk5UWFuamRHQ0xaazQ5OURKMzB0N2pwME4
 ```
-4. Lastly, to recieve the ID token, we will send the authorization code and the code verifier to the token endpoint on the authorization server.
-
+Lastly, to recieve the ID token, we will send the authorization code and the code verifier to the token endpoint on the authorization server.
 
 ```bash
 cat data_sign_in.json
@@ -181,8 +182,8 @@ cat data_sign_in.json
     "grant_type":"authorization_code",
     "code":"1853Sxx4h4eNKrsB",
     "redirect_uri":"http://localhost:8080",
-    "client_id":"BK7iS32Y9QanjdGCLZk499DJ30t7jp0N",
-    "code_verifier":"8i12XE.KUkc4GPnXztOd3jtDNgwDqX20gho59kuKGP~",
+    "client_id":"3YfTh7XFUa7vtNuxUkSwa5HziyquYTI3",
+    "code_verifier":"FLy2h8AP4IXo5~Od~Aeei7yJvcmwxjTs_Kv5O-e-1ah",
     "audience":"https://soberapi.solstad.dev/"
 }
 curl --request POST \
@@ -199,6 +200,7 @@ curl --request POST \
   "token_type": "Bearer"
 }
 ```
+
 ## ID token
 
 The ID token is a Json Web Token, JWT, and consists of a base64 encoded header, payload and signature. Validation of JWT involves encoding the header and payload with information found in the JWT and comparing it with the signature. Its specifics are beyond the scope of this article but the procedure is described in [RFC7519](https://tools.ietf.org/html/rfc7519#section-7.2). The long sought after user information can be seen by base64 decoding the payload. Alternatively you may use [jwt.io](https://jwt.io/#debugger-io?token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ijg1c1ZGNW5Vdl9CS2tiWF9pTUVzTSJ9.eyJnaXZlbl9uYW1lIjoiS2ltIFJ1bmUiLCJmYW1pbHlfbmFtZSI6IlNvbHN0YWQiLCJuaWNrbmFtZSI6ImtpbXJ1bmVzb2xzdGFkODkiLCJuYW1lIjoiS2ltIFJ1bmUgU29sc3RhZCIsInBpY3R1cmUiOiJodHRwczovL2xoNC5nb29nbGV1c2VyY29udGVudC5jb20vLVRZeVduLTRQX3RrL0FBQUFBQUFBQUFJL0FBQUFBQUFBQUFBL0FNWnV1Y21DU05zeE9nVGRaa05PR1BjLWQ5aG56RGNfV3cvcGhvdG8uanBnIiwibG9jYWxlIjoibm8iLCJ1cGRhdGVkX2F0IjoiMjAyMC0wOS0yOFQxMjoyNjo0Ni43OTBaIiwiaXNzIjoiaHR0cHM6Ly9zb2Jlci5ldS5hdXRoMC5jb20vIiwic3ViIjoiZ29vZ2xlLW9hdXRoMnwxMTA0MzEyMTE3NzQ4MjgzMTA3MTIiLCJhdWQiOiJCSzdpUzMyWTlRYW5qZEdDTFprNDk5REozMHQ3anAwTiIsImlhdCI6MTYwMTI5NjE0MSwiZXhwIjoxNjAxMzMyMTQxLCJub25jZSI6IjJ2Y2pqbGR1eXpjIn0.hPKkDXd7zX8IDXBmxv7yzzmp9sdxqTTaGF3Ml5sRvkCf_89hr72B62w5sprBgz7jjF4HcvgypN9BMaxFNUM0SHjtbQKvYj5yUgZim7b7QbmyJh1Pu-YppVXhVuDwiDj0aWuRzFyxfEW39ZksYVJ3BcEhSl1ejq0-egkgiYVHMGu52enR5mr2vd3fNEjZDhDFAouL2XX1LWERxHTuSvICnhxjrmmBQ_rBs65eK9zmRGf8GM3VTPU00N7W6VE6CkA8swsV0SxSSOdPZzS8TJPIX6jHxbz9mdF31EVv43a2oEH8S3MfOf2a6yznWKP_UcAW2SgDDLb6xW1vEAZe-93QiA&publicKey=-----BEGIN%20PUBLIC%20KEY-----%0AMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAo20nae36OLb2itnd6tUy%0AotU2%2FtfAhKhZqatn4CiOyymRFxWktad4xzu65Kuwv0ggxUqyciLMlR0PTgDItas%2F%0Azdxjg8FhUkoepcq69l0GR3OtRBYBIGq%2BZ0c9TRp%2FDSw7YAN8TIcqlI90MTGljTHk%0AcRJpLlS6kdh7wlGFmeFXcRUqBbkzvsoHxfJspD25X7DCey02CczJ8hfIjnlKCdH4%0AxTvkL3KlWDxwI1xQc9nCq2TrsBe%2F4l428VY8FXRi0%2BuPgM7SKQepBeUw37G%2FOndK%0AnBmPxyQ452G62ML3ZkSvEN0hQ4q6d%2FRxHHsdwcti6xayE0SPoHEzECzekGm9Q0k%2B%0AsQIDAQAB%0A-----END%20PUBLIC%20KEY-----%0A)
@@ -227,20 +229,18 @@ cat token.json              \
 }
 ```
 ## Conclusion
-
-
-
-
-
+After explaining the basis of OAuth 2.0 and OpenID Connect we went through use cases for three different grant types, namely client credentials, authorization code and PKCE. PKCE flow adds an extra layer of security compared to the deprecated implicit flow. I am however not sure about the added layer of security PKCE provides. It seems to me that anyone capable of retrieving the authorization could easily get the code verifier aswell. I might have to investigate this for a future blog post.
 
 ## Resources
-https://developer.okta.com/blog/2019/05/01/is-the-oauth-implicit-flow-dead
+* https://tools.ietf.org/html/rfc7636#section-4.1
 
-https://www.youtube.com/watch?v=996OiexHze0\
+* https://tools.ietf.org/html/rfc7519#section-7.2
 
-https://auth0.com/docs/flows/authorization-code-flow-with-proof-key-for-code-exchange-pkce
+* https://tools.ietf.org/html/draft-ietf-oauth-browser-based-apps-00#section-7
+https://tools.ietf.org/html/rfc8414
 
+* https://developer.okta.com/blog/2019/05/01/is-the-oauth-implicit-flow-dead
 
-https://anthonychu.ca/post/azure-functions-app-service-openid-connect-auth0/
+* https://www.youtube.com/watch?v=996OiexHze0\
 
-https://tools.ietf.org/html/rfc7636#section-4.1
+* https://auth0.com/docs/flows/authorization-code-flow-with-proof-key-for-code-exchange-pkce
