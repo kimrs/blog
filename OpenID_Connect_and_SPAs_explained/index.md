@@ -31,7 +31,7 @@ In the following example, we retrieve the authorization server's access token us
 ![Client Credentials](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/Auth0_client_credentials_01.png)
 
 We then ask for the token by sending the *client id* and the *client secret* to the token endpoint.
-```Bash
+```bash
 cat data_sign_in.json
 {
   "client_id":"VNQEv6jxX5O9zOJ9g2jUoI7css7qpX60",
@@ -137,7 +137,7 @@ For cases where the communication is prone to an interception, this is the recom
 
 In this last example, we will register the application as a Single Page Application. Like the last time, set the 'Allowed Callbacks' to http://localhost:8080 and make sure the server we created in the previous example still runs.
 
-```Bash
+```bash
 node server.js
 ```
 
@@ -166,7 +166,7 @@ echo FLy2h8AP4IXo5~Od~Aeei7yJvcmwxjTs_Kv5O-e-1ah \
 78ZgrApYA9Fsl9hBEZuuRK0aUUKKzUVF6v3dM7I5SPY
 ```
 We include the code challenge in the sign-in URL. Also, we have to tell the authorization server what method to use for the code challenge. Because we used a hash, we must set it to S256.
-```
+```bash
 open https://sober.eu.auth0.com/authorize?client_id=3YfTh7XFUa7vtNuxUkSwa5HziyquYTI3&redirect_uri=http%3A%2F%2Flocalhost%3A8080&scope=openid%20profile&code_challenge=78ZgrApYA9Fsl9hBEZuuRK0aUUKKzUVF6v3dM7I5SPY&code_challenge_method=S256&response_type=code&response_mode=form_post&nonce=2vcjjlduyzc
 ```
 
@@ -206,7 +206,7 @@ curl --request POST \
 
 The ID token is a JSON Web Token, JWT, consisting of a base64 encoded header, payload, and signature. Validation of JWT involves encoding the header and payload using the information found in the JWT and comparing it with the signature. Its specifics are beyond the scope of this post, but [RFC7519](https://tools.ietf.org/html/rfc7519#section-7.2) describes the procedure. The long sought after user information can be seen by base64 decoding the payload. Alternatively, you may use [jwt.io](https://jwt.io/#debugger-io?token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ijg1c1ZGNW5Vdl9CS2tiWF9pTUVzTSJ9.eyJnaXZlbl9uYW1lIjoiS2ltIFJ1bmUiLCJmYW1pbHlfbmFtZSI6IlNvbHN0YWQiLCJuaWNrbmFtZSI6ImtpbXJ1bmVzb2xzdGFkODkiLCJuYW1lIjoiS2ltIFJ1bmUgU29sc3RhZCIsInBpY3R1cmUiOiJodHRwczovL2xoNC5nb29nbGV1c2VyY29udGVudC5jb20vLVRZeVduLTRQX3RrL0FBQUFBQUFBQUFJL0FBQUFBQUFBQUFBL0FNWnV1Y21DU05zeE9nVGRaa05PR1BjLWQ5aG56RGNfV3cvcGhvdG8uanBnIiwibG9jYWxlIjoibm8iLCJ1cGRhdGVkX2F0IjoiMjAyMC0wOS0yOFQxMjoyNjo0Ni43OTBaIiwiaXNzIjoiaHR0cHM6Ly9zb2Jlci5ldS5hdXRoMC5jb20vIiwic3ViIjoiZ29vZ2xlLW9hdXRoMnwxMTA0MzEyMTE3NzQ4MjgzMTA3MTIiLCJhdWQiOiJCSzdpUzMyWTlRYW5qZEdDTFprNDk5REozMHQ3anAwTiIsImlhdCI6MTYwMTI5NjE0MSwiZXhwIjoxNjAxMzMyMTQxLCJub25jZSI6IjJ2Y2pqbGR1eXpjIn0.hPKkDXd7zX8IDXBmxv7yzzmp9sdxqTTaGF3Ml5sRvkCf_89hr72B62w5sprBgz7jjF4HcvgypN9BMaxFNUM0SHjtbQKvYj5yUgZim7b7QbmyJh1Pu-YppVXhVuDwiDj0aWuRzFyxfEW39ZksYVJ3BcEhSl1ejq0-egkgiYVHMGu52enR5mr2vd3fNEjZDhDFAouL2XX1LWERxHTuSvICnhxjrmmBQ_rBs65eK9zmRGf8GM3VTPU00N7W6VE6CkA8swsV0SxSSOdPZzS8TJPIX6jHxbz9mdF31EVv43a2oEH8S3MfOf2a6yznWKP_UcAW2SgDDLb6xW1vEAZe-93QiA&publicKey=-----BEGIN%20PUBLIC%20KEY-----%0AMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAo20nae36OLb2itnd6tUy%0AotU2%2FtfAhKhZqatn4CiOyymRFxWktad4xzu65Kuwv0ggxUqyciLMlR0PTgDItas%2F%0Azdxjg8FhUkoepcq69l0GR3OtRBYBIGq%2BZ0c9TRp%2FDSw7YAN8TIcqlI90MTGljTHk%0AcRJpLlS6kdh7wlGFmeFXcRUqBbkzvsoHxfJspD25X7DCey02CczJ8hfIjnlKCdH4%0AxTvkL3KlWDxwI1xQc9nCq2TrsBe%2F4l428VY8FXRi0%2BuPgM7SKQepBeUw37G%2FOndK%0AnBmPxyQ452G62ML3ZkSvEN0hQ4q6d%2FRxHHsdwcti6xayE0SPoHEzECzekGm9Q0k%2B%0AsQIDAQAB%0A-----END%20PUBLIC%20KEY-----%0A)
 
-```Bash
+```bash
 cat token.json              \
 | jq -r .id_token           \
 | awk -F. '{ print $2 }'    \ 
