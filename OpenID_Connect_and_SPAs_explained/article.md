@@ -1,4 +1,4 @@
-![Authorized personnel onlu](res/authorized_pers.jpg)
+![Authorized personnel onlu](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/authorized_pers.jpg)
 # About OAuth 2.0 and OpenID connect
 OAuth 2.0 is a popular protocol used for authorization on the internet. Authorization means specifying the priveleges of someone/something accessing a resource. When an app asks a user for access to a resource she owns, such as her contact list, the app redirects her to a third party `authorization server` where she grants access to it. She, the `resource owner`, has authorized the app, the `client`, to use her contact list. The authorization server mints and returns an `access token`, with the `scope` for her contact list, back to the `client`. Subsequentially, the `client` includes the `access token` in its request for the contact list to the `resource server`.
 
@@ -26,7 +26,7 @@ curl  --request GET \
 ```
 In the following example, we retrieve the access token from the authorization server using the client credentials grant. The first step in implementing any grant types is registering the application on the authorization server. The server we will use for the entirety of this article is [Auth0.com](https://auth0.com/). For the client credential flow to be used, we select "Machine to Machine Applications"
 
-![Client Credentials](res/Auth0_client_credentials_01.png)
+![Client Credentials](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/Auth0_client_credentials_01.png)
 
 
 ```Bash
@@ -61,9 +61,9 @@ The authorization code is useless to anyone who does not know the client secret.
 ![Authorization code flow with PKCE](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/authorization_code_w_pkce.jpg)
 
 1. For the authorization code grant type to be used, "Regular Web Applications" must be selected when registering the app. 
-![Authorization Code](res/Auth0_authorization_code_01.png)
+![Authorization Code](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/Auth0_authorization_code_01.png)
 2. We set the allowed callback to be http://localhost:8080. This is where we will receive the code and the token from the authorization server.
-![Authorization Code](res/Auth0_authorization_code_02.png)
+![Authorization Code](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/Auth0_authorization_code_02.png)
 
 3. In order to catch the authorization code, we will start a web server that listens to http://localhost:8080 and writes the post data in the request to STDOUT.
 
@@ -138,7 +138,7 @@ Alas, Single Page Applications have no backchannel through which it may exchange
 node server.js
 ```
 
-![Create application](res/auth0_spa_01.png)
+![Create application](https://raw.githubusercontent.com/kimrs/blog/master/OpenID_Connect_and_SPAs_explained/res/Auth0_spa_01.png)
 
 2. According to [RFC7636](https://tools.ietf.org/html/rfc7636#section-4.1), the "code_verifier" is a cryptographic random string using the characters `[A-Z]/[a-z]/[0-9]/"-"/"."/"_"/"~"` with a minimum length of 43 characters and a maximum length of 128 characters. We need to generate such a string before we can make the code challenge.  
 
