@@ -19,7 +19,7 @@ They designed OAuth 2.0 for giving permissions, not for authentication. For auth
 ## Client Credentials
 A grant type is a method through which the client obtains the access token. The simplest grant type is Client Credentials and used in server to server communication. For the client to use the authorization server, the client must be registered by it and given a public client ID and possibly a private client secret that should only be known by the client and the authorization server. The ID and the secret are the client's credentials, which it can exchange for an access token using the authorization server's token endpoint. Which endpoints to use in communication with the authorization server can be found with the configuration URL. This information is usually available on the authorization server's dashboard, but the URL is the [IETF](https://tools.ietf.org/html/rfc8414) standard to obtain information about interaction with authorization servers. 
 
-**_Note:_** Grant types are often reffered to as flows.
+**_Note:_** Grant types are often referred to as flows.
 
 **_Note:_** The shell I am using in this guide is [*Fish*](https://fishshell.com/), but converting the commands to Bash or Zsh should not be complicated. Also, the commands are executed on a Mac
 
